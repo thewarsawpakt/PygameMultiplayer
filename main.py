@@ -46,7 +46,6 @@ class Game:
         self.display = pygame.display.get_surface()
 
     def run(self):
-        print("running")
         while self.running:
             dt = self.clock.tick(FPS)
             for event in pygame.event.get():
