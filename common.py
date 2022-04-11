@@ -1,15 +1,14 @@
 from dataclasses import dataclass
+from enum import Enum
 
 
-@dataclass
-class PacketType:
+class PacketType(Enum):
     DISCONNECT = -1
     IDLE = 0
     MOVING = 1
 
 
-@dataclass
-class PacketPriority:
+class PacketPriority(Enum):
     DROPPABLE = 0
     PRIORITY = 1
 
@@ -17,6 +16,6 @@ class PacketPriority:
 @dataclass
 class Packet:
     priority: PacketPriority
-    type_: PacketType
+    type: PacketType
     data: bytes
 
