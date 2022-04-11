@@ -1,11 +1,7 @@
 import pygame
-import enum
 
-
-class PlayerStates(enum.Enum):
-    PLAYER_IDLING = 0
-    PLAYER_MOVING = 1
-    PLAYER_JUMPING = 2
+running = True
+FPS = 120.0
 
 
 class Player(pygame.sprite.Sprite):
@@ -16,12 +12,9 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.image.fill(self.color, self.rect)
         self.display = pygame.display.get_surface()
-        self.state = PlayerStates.PLAYER_IDLING
         self.velocity = 1
 
     def move(self, keys, dt):
-        #  if self.state == PlayerStates.PLAYER_JUMPING:
-        #      return False
 
         x, y = 0, 0
         if keys[pygame.K_w]:
@@ -40,20 +33,19 @@ class Player(pygame.sprite.Sprite):
         self.display.blit(self.image, (self.rect.x, self.rect.y))
 
 
-pygame.init()
-display = pygame.display.set_mode((500, 500))
-running = True
-FPS = 120.0
-clock = pygame.time.Clock()
-bob = Player()
-while running:
-    dt = clock.tick(FPS)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-    bob.move(pygame.key.get_pressed(), dt)
-    display.fill((0, 0, 0))
-    bob.draw()
-    pygame.display.flip()
+if __name__ == "__main__":
+    pygame.init()
+    display = pygame.display.set_mode((500, 500))
+    clock = pygame.time.Clock()
+    bob = Player()
+    while running:
+        dt = clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+        bob.move(pygame.key.get_pressed(), dt)
+        display.fill((0, 0, 0))
+        bob.draw()
+        pygame.display.flip()
 
-pygame.quit()
+    pygame.quit()
