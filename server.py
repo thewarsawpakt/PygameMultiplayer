@@ -22,7 +22,9 @@ class ThreadedPacketHandler(socketserver.BaseRequestHandler):
         if self.client_address not in self.server.clients:
             self.server.clients.add(self.client_address)
             print("New client added:", self.client_address)
-
+        packet = pickle.loads(self.request[0])
+        if packet.type == PacketType.DISCONNECT:
+            self.server.clients.remove(self.client_address)
         self.server.broadcast(self.request[0])
 
 if __name__ == "__main__":
