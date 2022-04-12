@@ -4,16 +4,20 @@ import socket
 import threading
 from common import *
 
-running = True
-FPS = 120.0
-SERVER_ADDRESS = ("127.0.0.1", 20000)
+running = True  # Variable that is used to break out of the pygame loop
+FPS = 120.0  # How many times per second we are updating the display
+SERVER_ADDRESS = ("127.0.0.1", 20000)  # Address of the server we will be connecting to
+PACKET_SIZE = 512
 
 
 class Entity(pygame.sprite.Sprite):
+    """
+    Container for a basic object that can be drawn.
+    """
     def __init__(self, color=(255, 255, 0)):
         super().__init__()
         self.color = color
-        self.image = pygame.Surface([64, 64])
+        self.image = pygame.Surface([16, 16])
         self.rect = self.image.get_rect()
         self.image.fill(self.color, self.rect)
         self.velocity = 1
@@ -25,15 +29,27 @@ class Entity(pygame.sprite.Sprite):
         display.blit(self.image, (self.rect.x, self.rect.y))
 
     def dump(self):
+        """
+        Allows for this object to be sent over a packet, as pygame surfaces cannot be pickled.
+        :return: Tuple of its position
+        """
         return self.rect.x, self.rect.y
 
 
 class Player(Entity):
+    """
+    Main movable player.
+    """
     def __init__(self):
         super().__init__()
 
     def move(self, keys, dt):
-        pass
+        """
+        Takes in the delta time and keys pressed
+        :param keys: Result from pygame.key.get_pressed()
+        :param dt: Milliseconds since last frame
+        :return: Boolean stating whether to redraw the player or not.
+        """
         x, y = 0, 0
         if keys[pygame.K_w]:
             y -= self.velocity
@@ -51,6 +67,9 @@ class Player(Entity):
 
 
 class NetworkedPlayer(Entity):
+    """
+    Entity that is used to draw networked players.
+    """
     def __init__(self):
         super().__init__((0, 255, 0))
 
@@ -71,27 +90,41 @@ class Game:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def handle_server(self):
-        while packet := pickle.loads(self.socket.recv(1024)):
+        """
+        Handles information from the server and updates player2's position
+        :return: None
+        """
+        while packet := pickle.loads(self.socket.recv(PACKET_SIZE)):
+            # Receives data from the server and updates our player2 position
             self.player2.move(packet.data)
 
     def run(self):
+        """
+        Main method of the game
+        :return: None
+        """
         self.socket.connect(SERVER_ADDRESS)
+        # Create thread to update player2 position and to
         socket_monitor = threading.Thread(target=self.handle_server)
         socket_monitor.start()
-        while self.running:
+        while True:
             dt = self.clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    socket_monitor.join(0.5)
                     return
 
             if self.player.move(pygame.key.get_pressed(), dt):
+                # Update our position with the server
                 packet = Packet(PacketPriority.PRIORITY, type=PacketType.MOVING, data=self.player.dump())
-                self.socket.send(pickle.dumps(packet))
+            else:
+                # Make sure that the server knows we are still connected
+                packet = Packet(PacketPriority.DROPPABLE, type=PacketType.IDLE, data=None)
+            self.socket.send(pickle.dumps(packet))
             self.display.fill((255, 255, 255))
             self.player.draw(self.display)
             self.player2.draw(self.display)
             pygame.display.flip()
-        socket_monitor.join()
 
 
 if __name__ == "__main__":
