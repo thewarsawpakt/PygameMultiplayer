@@ -5,9 +5,6 @@ import threading
 from common import *
 
 running = True  # Variable that is used to break out of the pygame loop
-FPS = 120.0  # How many times per second we are updating the display
-SERVER_ADDRESS = ("127.0.0.1", 20000)  # Address of the server we will be connecting to
-PACKET_SIZE = 512
 
 
 class Entity(pygame.sprite.Sprite):
@@ -20,7 +17,11 @@ class Entity(pygame.sprite.Sprite):
         self.image = pygame.Surface([16, 16])
         self.rect = self.image.get_rect()
         self.image.fill(self.color, self.rect)
-        self.velocity = 1
+        self.velocity = 2
+
+    @property
+    def display(self):
+        return pygame.display.get_surface()
 
     def move(self, *args):
         pass
@@ -31,9 +32,9 @@ class Entity(pygame.sprite.Sprite):
     def dump(self):
         """
         Allows for this object to be sent over a packet, as pygame surfaces cannot be pickled.
-        :return: Tuple of its position
+        :return: pygame.rect.Rect representation of its position
         """
-        return self.rect.x, self.rect.y
+        return self.rect
 
 
 class Player(Entity):
@@ -60,7 +61,8 @@ class Player(Entity):
         if keys[pygame.K_d]:
             x += self.velocity
 
-        self.rect.move_ip(x, y)
+        self.rect.move_ip(x * self.velocity, y * self.velocity)
+        self.rect.clamp_ip(self.display.get_rect())
 
         if x or y:
             return True
@@ -73,9 +75,8 @@ class NetworkedPlayer(Entity):
     def __init__(self):
         super().__init__((0, 255, 0))
 
-    def move(self, pos):
-        self.rect.x = pos[0]
-        self.rect.y = pos[1]
+    def move(self, rect):
+        self.rect = rect
 
 
 class Game:
@@ -94,9 +95,9 @@ class Game:
         Handles information from the server and updates player2's position
         :return: None
         """
-        while packet := pickle.loads(self.socket.recv(PACKET_SIZE)):
+        while rect := pickle.loads(self.socket.recv(PACKET_SIZE)):
             # Receives data from the server and updates our player2 position
-            self.player2.move(packet.data)
+            self.player2.move(rect)
 
     def run(self):
         """

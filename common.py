@@ -1,5 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
+import typing
+
+WINDOW_SIZE = (500, 500)
+FPS = 120
+SERVER_ADDRESS = ("127.0.0.1", 20000)  # Address of the server we will be connecting to
+PACKET_SIZE = 512
 
 
 class PacketType(Enum):
@@ -17,5 +23,4 @@ class PacketPriority(Enum):
 class Packet:
     priority: PacketPriority
     type: PacketType
-    data: bytes
-
+    data: typing.Any
