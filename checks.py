@@ -1,9 +1,10 @@
 import pygame
 from pygame.rect import Rect
+from common import WINDOW_SIZE
 
 
 def correct_wall_collide(rect: Rect) -> Rect:
-    test_display = pygame.Surface((500, 500)).get_rect()  # Game window size is constant
+    test_display = pygame.Surface(WINDOW_SIZE).get_rect()
 
     return rect.clamp(test_display)
 
