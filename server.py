@@ -68,7 +68,6 @@ def main():
     try:
         server.serve_forever(5)
     except KeyboardInterrupt:
-        server.scheduler_thread.join(5)
         server.shutdown()
 
 
