@@ -27,7 +27,7 @@ class GameUDPServer(socketserver.ThreadingUDPServer):
         :return: None
         """
         for client in self.clients:
-            if client == source:  # Don't send client's packet back to it
+            if client[1] == source:  # Don't send client's packet back to it
                 continue
             self.socket.sendto(data, client)
 
@@ -46,15 +46,19 @@ class ThreadedPacketHandler(socketserver.BaseRequestHandler):
         :return: None
         """
 
+        packet = pickle.loads(self.request[0])  # Load the packet's actual data
+
         if self.client_address not in self.server.clients:
             # If this is a new client, add it to our server's list so that we can broadcast to it
             self.server.clients.add(self.client_address)
-        packet = pickle.loads(self.request[0])  # Load the packet's actual data
+
         if packet.type == PacketType.DISCONNECT:
             # If the client wants to disconnect, then we will remove it from our broadcasting list
             self.server.clients.remove(self.client_address)
+
         if packet.type == PacketType.IDLE:
             return
+
         if packet.type == PacketType.MOVING:
             packet.data = correct_wall_collide(packet.data)
 

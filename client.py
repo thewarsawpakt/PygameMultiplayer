@@ -26,8 +26,8 @@ class Entity(pygame.sprite.Sprite):
     def move(self, *args):
         pass
 
-    def draw(self, display):
-        display.blit(self.image, (self.rect.x, self.rect.y))
+    def draw(self):
+        self.display.blit(self.image, (self.rect.x, self.rect.y))
 
     def dump(self):
         """
@@ -44,11 +44,10 @@ class Player(Entity):
     def __init__(self):
         super().__init__()
 
-    def move(self, keys, dt):
+    def move(self, keys):
         """
         Takes in the delta time and keys pressed
         :param keys: Result from pygame.key.get_pressed()
-        :param dt: Milliseconds since last frame
         :return: Boolean stating whether to redraw the player or not.
         """
         x, y = 0, 0
@@ -61,7 +60,7 @@ class Player(Entity):
         if keys[pygame.K_d]:
             x += self.velocity
 
-        self.rect.move_ip(x * self.velocity, y * self.velocity)
+        self.rect.move_ip(x, y)
         self.rect.clamp_ip(self.display.get_rect())
 
         if x or y:
@@ -74,9 +73,16 @@ class NetworkedPlayer(Entity):
     """
     def __init__(self):
         super().__init__((0, 255, 0))
+        self.previous_rect = self.rect
 
     def move(self, rect):
+        self.previous_rect = self.rect
         self.rect = rect
+
+    def check_update(self):
+        if self.previous_rect == self.rect:
+            return False
+        return True
 
 
 class Game:
@@ -109,22 +115,21 @@ class Game:
         socket_monitor = threading.Thread(target=self.handle_server)
         socket_monitor.start()
         while True:
-            dt = self.clock.tick(FPS)
+            self.display.fill((255, 255, 255))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     socket_monitor.join(0.5)
                     return
-
-            if self.player.move(pygame.key.get_pressed(), dt):
+            if self.player.move(pygame.key.get_pressed()):
                 # Update our position with the server
                 packet = Packet(PacketPriority.PRIORITY, type=PacketType.MOVING, data=self.player.dump())
+                self.player.draw()
             else:
                 # Make sure that the server knows we are still connected
                 packet = Packet(PacketPriority.DROPPABLE, type=PacketType.IDLE, data=None)
+            if self.player2.check_update():
+                self.player2.draw()
             self.socket.send(pickle.dumps(packet))
-            self.display.fill((255, 255, 255))
-            self.player.draw(self.display)
-            self.player2.draw(self.display)
             pygame.display.flip()
 
 

@@ -3,7 +3,7 @@ from enum import Enum
 import typing
 
 WINDOW_SIZE = (500, 500)
-FPS = 120
+FPS = float("inf")
 SERVER_ADDRESS = ("127.0.0.1", 20000)  # Address of the server we will be connecting to
 PACKET_SIZE = 512
 
